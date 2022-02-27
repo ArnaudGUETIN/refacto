@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.TimeZone;
 @Service
 public class ShoppingServiceImplement implements ShoppingService{
-    public static final String zero = "0";
+    private static final String zeroValue = "0";
     @Override
     public String getPrice(Body b) {
         double price = 0;
@@ -23,59 +23,43 @@ public class ShoppingServiceImplement implements ShoppingService{
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Paris"));
         cal.setTime(date);
 
-        // Compute discount for customer
-        boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
-        boolean isPremiumCustomer = checkCustomerType(b, CustomerEnum.PREMIUM);
-        boolean isPlatinumCustomer = checkCustomerType(b, CustomerEnum.PLATINUM);
-        if (isStandardCustomer) {
-            discount = 1;
-        } else if (isPremiumCustomer) {
-            discount = 0.9;
-        } else if (isPlatinumCustomer) {
-            discount = 0.5;
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
+        discount = getCustomerDiscount(b);
 
         // Compute total amount depending on the types and quantity of product and
         // if we are in winter or summer discounts periods
         if ( isNotDiscountPeriod(cal, 5) && isNotDiscountPeriod(cal, 0)) {
             if (b.getItems() == null) {
-                return zero;
+                return zeroValue;
             }
 
             price = sumItemsPrice(b, price, discount,false);
         } else {
             if (b.getItems() == null) {
-                return zero;
+                return zeroValue;
             }
 
             price = sumItemsPrice(b, price, discount,true);
         }
-
-        try {
-            if (isStandardCustomer) {
-                if (price > 200) {
-                    throwPriceException(price, "standard");
-                }
-            } else if (isPremiumCustomer) {
-                if (price > 800) {
-                    throwPriceException(price, "premium");
-                }
-            } else if (isPlatinumCustomer) {
-                if (price > 2000) {
-                    return throwPriceException(price, "platinum");
-                }
-            } else {
-                if (price > 200) {
-                    throwPriceException(price, "standard");
-                }
-            }
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
+        sendPriceMessage(b,price);
 
         return String.valueOf(price);
+    }
+    double getCustomerDiscount(Body b){
+        double toReturn;
+        // Compute discount for customer
+        boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
+        boolean isPremiumCustomer = checkCustomerType(b, CustomerEnum.PREMIUM);
+        boolean isPlatinumCustomer = checkCustomerType(b, CustomerEnum.PLATINUM);
+        if (isStandardCustomer) {
+            toReturn = 1;
+        } else if (isPremiumCustomer) {
+            toReturn = 0.9;
+        } else if (isPlatinumCustomer) {
+            toReturn = 0.5;
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        return toReturn;
     }
     // throw exceptions with price and customer type
     private String throwPriceException(double price, String customerTypeText) throws Exception {
@@ -117,5 +101,33 @@ public class ShoppingServiceImplement implements ShoppingService{
                 cal.get(Calendar.DAY_OF_MONTH) > 5 &&
                 cal.get(Calendar.MONTH) == i
         );
+    }
+    // Send price message
+    public void sendPriceMessage(Body b,double price){
+        boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
+        boolean isPremiumCustomer = checkCustomerType(b, CustomerEnum.PREMIUM);
+        boolean isPlatinumCustomer = checkCustomerType(b, CustomerEnum.PLATINUM);
+
+        try {
+            if (isStandardCustomer) {
+                if (price > 200) {
+                    throwPriceException(price, "standard");
+                }
+            } else if (isPremiumCustomer) {
+                if (price > 800) {
+                    throwPriceException(price, "premium");
+                }
+            } else if (isPlatinumCustomer) {
+                if (price > 2000) {
+                     throwPriceException(price, "platinum");
+                }
+            } else {
+                if (price > 200) {
+                    throwPriceException(price, "standard");
+                }
+            }
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.sipios.refactoring.service;
 
 import com.sipios.refactoring.controller.entities.Body;
 import com.sipios.refactoring.controller.entities.Item;
+import com.sipios.refactoring.enums.CustomerEnum;
+import com.sipios.refactoring.enums.ItemTypeEnum;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,11 +23,11 @@ public class ShoppingServiceImplement implements ShoppingService{
         cal.setTime(date);
 
         // Compute discount for customer
-        if (b.getType().equals("STANDARD_CUSTOMER")) {
+        if (b.getType().equals(CustomerEnum.STANDARD.getValue())) {
             d = 1;
-        } else if (b.getType().equals("PREMIUM_CUSTOMER")) {
+        } else if (b.getType().equals(CustomerEnum.PREMIUM.getValue())) {
             d = 0.9;
-        } else if (b.getType().equals("PLATINUM_CUSTOMER")) {
+        } else if (b.getType().equals(CustomerEnum.PLATINUM.getValue())) {
             d = 0.5;
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
@@ -52,11 +54,11 @@ public class ShoppingServiceImplement implements ShoppingService{
             for (int i = 0; i < b.getItems().length; i++) {
                 Item it = b.getItems()[i];
 
-                if (it.getType().equals("TSHIRT")) {
+                if (it.getType().equals(ItemTypeEnum.TSHIRT.getValue())) {
                     p += 30 * it.getNb() * d;
-                } else if (it.getType().equals("DRESS")) {
+                } else if (it.getType().equals(ItemTypeEnum.DRESS.getValue())) {
                     p += 50 * it.getNb() * d;
-                } else if (it.getType().equals("JACKET")) {
+                } else if (it.getType().equals(ItemTypeEnum.JACKET.getValue())) {
                     p += 100 * it.getNb() * d;
                 }
                 // else if (it.getType().equals("SWEATSHIRT")) {
@@ -71,11 +73,11 @@ public class ShoppingServiceImplement implements ShoppingService{
             for (int i = 0; i < b.getItems().length; i++) {
                 Item it = b.getItems()[i];
 
-                if (it.getType().equals("TSHIRT")) {
+                if (it.getType().equals(ItemTypeEnum.TSHIRT.getValue())) {
                     p += 30 * it.getNb() * d;
-                } else if (it.getType().equals("DRESS")) {
+                } else if (it.getType().equals(ItemTypeEnum.DRESS.getValue())) {
                     p += 50 * it.getNb() * 0.8 * d;
-                } else if (it.getType().equals("JACKET")) {
+                } else if (it.getType().equals(ItemTypeEnum.JACKET.getValue())) {
                     p += 100 * it.getNb() * 0.9 * d;
                 }
                 // else if (it.getType().equals("SWEATSHIRT")) {
@@ -85,15 +87,15 @@ public class ShoppingServiceImplement implements ShoppingService{
         }
 
         try {
-            if (b.getType().equals("STANDARD_CUSTOMER")) {
+            if (b.getType().equals(CustomerEnum.STANDARD.getValue())) {
                 if (p > 200) {
                     throw new Exception("Price (" + p + ") is too high for standard customer");
                 }
-            } else if (b.getType().equals("PREMIUM_CUSTOMER")) {
+            } else if (b.getType().equals(CustomerEnum.PREMIUM.getValue())) {
                 if (p > 800) {
                     throw new Exception("Price (" + p + ") is too high for premium customer");
                 }
-            } else if (b.getType().equals("PLATINUM_CUSTOMER")) {
+            } else if (b.getType().equals(CustomerEnum.PLATINUM.getValue())) {
                 if (p > 2000) {
                     throw new Exception("Price (" + p + ") is too high for platinum customer");
                 }

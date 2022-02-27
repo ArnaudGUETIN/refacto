@@ -11,9 +11,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+
 @Service
-public class ShoppingServiceImplement implements ShoppingService{
+public class ShoppingServiceImplement implements ShoppingService {
     private static final String zeroValue = "0";
+
     @Override
     public String getPrice(Body b) {
         double price = 0;
@@ -27,24 +29,25 @@ public class ShoppingServiceImplement implements ShoppingService{
 
         // Compute total amount depending on the types and quantity of product and
         // if we are in winter or summer discounts periods
-        if ( isNotDiscountPeriod(cal, 5) && isNotDiscountPeriod(cal, 0)) {
+        if (isNotDiscountPeriod(cal, 5) && isNotDiscountPeriod(cal, 0)) {
             if (b.getItems() == null) {
                 return zeroValue;
             }
 
-            price = sumItemsPrice(b, price, discount,false);
+            price = sumItemsPrice(b, price, discount, false);
         } else {
             if (b.getItems() == null) {
                 return zeroValue;
             }
 
-            price = sumItemsPrice(b, price, discount,true);
+            price = sumItemsPrice(b, price, discount, true);
         }
-        sendPriceMessage(b,price);
+        sendPriceMessage(b, price);
 
         return String.valueOf(price);
     }
-    double getCustomerDiscount(Body b){
+
+    double getCustomerDiscount(Body b) {
         double toReturn;
         // Compute discount for customer
         boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
@@ -61,14 +64,17 @@ public class ShoppingServiceImplement implements ShoppingService{
         }
         return toReturn;
     }
+
     // throw exceptions with price and customer type
-    private String throwPriceException(double price, String customerTypeText) throws Exception {
-        throw new Exception("Price (" + price + ") is too high for "+customerTypeText+" customer");
+    private void throwPriceException(double price, String customerTypeText) throws Exception {
+        throw new Exception("Price (" + price + ") is too high for " + customerTypeText + " customer");
     }
+
     // check the customer type
     private boolean checkCustomerType(Body b, CustomerEnum type) {
         return b.getType().equals(type.getValue());
     }
+
     // calculate total price with discount in discount period or not
     public double sumItemsPrice(Body b, double price, double discount, boolean isDiscountPeriod) {
         for (int i = 0; i < b.getItems().length; i++) {
@@ -80,20 +86,19 @@ public class ShoppingServiceImplement implements ShoppingService{
             if (isTshirt) {
                 price += 30 * it.getNb() * discount;
             } else if (isDress) {
-                price += isDiscountPeriod?50 * it.getNb() * 0.8 * discount:50 * it.getNb() * discount;
+                price += isDiscountPeriod ? 50 * it.getNb() * 0.8 * discount : 50 * it.getNb() * discount;
             } else if (isJacket) {
-                price += isDiscountPeriod?100 * it.getNb() * 0.9 * discount:100 * it.getNb() * discount;
+                price += isDiscountPeriod ? 100 * it.getNb() * 0.9 * discount : 100 * it.getNb() * discount;
             }
-            // else if (it.getType().equals("SWEATSHIRT")) {
-            //     price += 80 * it.getNb();
-            // }
         }
         return price;
     }
+
     // check the item type
     private boolean checkItemType(Item it, ItemTypeEnum type) {
         return it.getType().equals(type.getValue());
     }
+
     //check if we are not  in discount period (winter and summmer)
     public boolean isNotDiscountPeriod(Calendar cal, int i) {
         return !(
@@ -102,8 +107,9 @@ public class ShoppingServiceImplement implements ShoppingService{
                 cal.get(Calendar.MONTH) == i
         );
     }
+
     // Send price message
-    public void sendPriceMessage(Body b,double price){
+    public void sendPriceMessage(Body b, double price) {
         boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
         boolean isPremiumCustomer = checkCustomerType(b, CustomerEnum.PREMIUM);
         boolean isPlatinumCustomer = checkCustomerType(b, CustomerEnum.PLATINUM);
@@ -119,7 +125,7 @@ public class ShoppingServiceImplement implements ShoppingService{
                 }
             } else if (isPlatinumCustomer) {
                 if (price > 2000) {
-                     throwPriceException(price, "platinum");
+                    throwPriceException(price, "platinum");
                 }
             } else {
                 if (price > 200) {

@@ -13,101 +13,109 @@ import java.util.Date;
 import java.util.TimeZone;
 @Service
 public class ShoppingServiceImplement implements ShoppingService{
+    public static final String zero = "0";
     @Override
     public String getPrice(Body b) {
-        double p = 0;
-        double d;
+        double price = 0;
+        double discount;
 
         Date date = new Date();
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Paris"));
         cal.setTime(date);
 
         // Compute discount for customer
-        if (b.getType().equals(CustomerEnum.STANDARD.getValue())) {
-            d = 1;
-        } else if (b.getType().equals(CustomerEnum.PREMIUM.getValue())) {
-            d = 0.9;
-        } else if (b.getType().equals(CustomerEnum.PLATINUM.getValue())) {
-            d = 0.5;
+        boolean isStandardCustomer = checkCustomerType(b, CustomerEnum.STANDARD);
+        boolean isPremiumCustomer = checkCustomerType(b, CustomerEnum.PREMIUM);
+        boolean isPlatinumCustomer = checkCustomerType(b, CustomerEnum.PLATINUM);
+        if (isStandardCustomer) {
+            discount = 1;
+        } else if (isPremiumCustomer) {
+            discount = 0.9;
+        } else if (isPlatinumCustomer) {
+            discount = 0.5;
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
         // Compute total amount depending on the types and quantity of product and
         // if we are in winter or summer discounts periods
-        if (
-            !(
-                cal.get(Calendar.DAY_OF_MONTH) < 15 &&
-                    cal.get(Calendar.DAY_OF_MONTH) > 5 &&
-                    cal.get(Calendar.MONTH) == 5
-            ) &&
-                !(
-                    cal.get(Calendar.DAY_OF_MONTH) < 15 &&
-                        cal.get(Calendar.DAY_OF_MONTH) > 5 &&
-                        cal.get(Calendar.MONTH) == 0
-                )
-        ) {
+        if ( isNotDiscountPeriod(cal, 5) && isNotDiscountPeriod(cal, 0)) {
             if (b.getItems() == null) {
-                return "0";
+                return zero;
             }
 
-            for (int i = 0; i < b.getItems().length; i++) {
-                Item it = b.getItems()[i];
-
-                if (it.getType().equals(ItemTypeEnum.TSHIRT.getValue())) {
-                    p += 30 * it.getNb() * d;
-                } else if (it.getType().equals(ItemTypeEnum.DRESS.getValue())) {
-                    p += 50 * it.getNb() * d;
-                } else if (it.getType().equals(ItemTypeEnum.JACKET.getValue())) {
-                    p += 100 * it.getNb() * d;
-                }
-                // else if (it.getType().equals("SWEATSHIRT")) {
-                //     price += 80 * it.getNb();
-                // }
-            }
+            price = sumItemsPrice(b, price, discount,false);
         } else {
             if (b.getItems() == null) {
-                return "0";
+                return zero;
             }
 
-            for (int i = 0; i < b.getItems().length; i++) {
-                Item it = b.getItems()[i];
-
-                if (it.getType().equals(ItemTypeEnum.TSHIRT.getValue())) {
-                    p += 30 * it.getNb() * d;
-                } else if (it.getType().equals(ItemTypeEnum.DRESS.getValue())) {
-                    p += 50 * it.getNb() * 0.8 * d;
-                } else if (it.getType().equals(ItemTypeEnum.JACKET.getValue())) {
-                    p += 100 * it.getNb() * 0.9 * d;
-                }
-                // else if (it.getType().equals("SWEATSHIRT")) {
-                //     price += 80 * it.getNb();
-                // }
-            }
+            price = sumItemsPrice(b, price, discount,true);
         }
 
         try {
-            if (b.getType().equals(CustomerEnum.STANDARD.getValue())) {
-                if (p > 200) {
-                    throw new Exception("Price (" + p + ") is too high for standard customer");
+            if (isStandardCustomer) {
+                if (price > 200) {
+                    throwPriceException(price, "standard");
                 }
-            } else if (b.getType().equals(CustomerEnum.PREMIUM.getValue())) {
-                if (p > 800) {
-                    throw new Exception("Price (" + p + ") is too high for premium customer");
+            } else if (isPremiumCustomer) {
+                if (price > 800) {
+                    throwPriceException(price, "premium");
                 }
-            } else if (b.getType().equals(CustomerEnum.PLATINUM.getValue())) {
-                if (p > 2000) {
-                    throw new Exception("Price (" + p + ") is too high for platinum customer");
+            } else if (isPlatinumCustomer) {
+                if (price > 2000) {
+                    return throwPriceException(price, "platinum");
                 }
             } else {
-                if (p > 200) {
-                    throw new Exception("Price (" + p + ") is too high for standard customer");
+                if (price > 200) {
+                    throwPriceException(price, "standard");
                 }
             }
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
-        return String.valueOf(p);
+        return String.valueOf(price);
+    }
+    // throw exceptions with price and customer type
+    private String throwPriceException(double price, String customerTypeText) throws Exception {
+        throw new Exception("Price (" + price + ") is too high for "+customerTypeText+" customer");
+    }
+    // check the customer type
+    private boolean checkCustomerType(Body b, CustomerEnum type) {
+        return b.getType().equals(type.getValue());
+    }
+    // calculate total price with discount in discount period or not
+    public double sumItemsPrice(Body b, double price, double discount, boolean isDiscountPeriod) {
+        for (int i = 0; i < b.getItems().length; i++) {
+            Item it = b.getItems()[i];
+
+            boolean isTshirt = checkItemType(it, ItemTypeEnum.TSHIRT);
+            boolean isDress = checkItemType(it, ItemTypeEnum.DRESS);
+            boolean isJacket = checkItemType(it, ItemTypeEnum.JACKET);
+            if (isTshirt) {
+                price += 30 * it.getNb() * discount;
+            } else if (isDress) {
+                price += isDiscountPeriod?50 * it.getNb() * 0.8 * discount:50 * it.getNb() * discount;
+            } else if (isJacket) {
+                price += isDiscountPeriod?100 * it.getNb() * 0.9 * discount:100 * it.getNb() * discount;
+            }
+            // else if (it.getType().equals("SWEATSHIRT")) {
+            //     price += 80 * it.getNb();
+            // }
+        }
+        return price;
+    }
+    // check the item type
+    private boolean checkItemType(Item it, ItemTypeEnum type) {
+        return it.getType().equals(type.getValue());
+    }
+    //check if we are not  in discount period (winter and summmer)
+    public boolean isNotDiscountPeriod(Calendar cal, int i) {
+        return !(
+            cal.get(Calendar.DAY_OF_MONTH) < 15 &&
+                cal.get(Calendar.DAY_OF_MONTH) > 5 &&
+                cal.get(Calendar.MONTH) == i
+        );
     }
 }

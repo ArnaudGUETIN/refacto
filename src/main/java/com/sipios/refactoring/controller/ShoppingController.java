@@ -4,8 +4,6 @@ package com.sipios.refactoring.controller;
 
 import com.sipios.refactoring.controller.entities.Body;
 import com.sipios.refactoring.service.ShoppingService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +18,6 @@ public class ShoppingController {
 
     @Autowired
     private ShoppingService shoppingService;
-    private Logger logger = LoggerFactory.getLogger(ShoppingController.class);
 
     @PostMapping
     public ResponseEntity<String> getPrice(@RequestBody Body b) {

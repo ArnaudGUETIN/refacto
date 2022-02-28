@@ -1,0 +1,10 @@
+Bonjour, dans le but de factoriser le code j'ai suivi les grands principe de l'architecture logicielle (SOLID).
+
+Dans ce sens j'ai:
+
+-Creer des classes pour encapsuler les propriétés de Body et Item dans un package qui regroupe les entités du projet.
+-Créer un package service et aussi l'interface ShoppingService afin de définir le contrat getPrice.
+-Créer une implementation du ShoppingService.
+-Factoriser la méthode getPrice en découpant la mathode en plusieurs appels de fonctions.
+-Creer des enums afin de définir les constantes du projet.
+-Adapter les tests.
